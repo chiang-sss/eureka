@@ -47,7 +47,8 @@ public class ExampleEurekaService {
         return applicationInfoManager;
     }
 
-    private static synchronized EurekaClient initializeEurekaClient(ApplicationInfoManager applicationInfoManager, EurekaClientConfig clientConfig) {
+    private static synchronized EurekaClient initializeEurekaClient(ApplicationInfoManager applicationInfoManager,
+                                                                    EurekaClientConfig clientConfig) {
         if (eurekaClient == null) {
             eurekaClient = new DiscoveryClient(applicationInfoManager, clientConfig);
         }

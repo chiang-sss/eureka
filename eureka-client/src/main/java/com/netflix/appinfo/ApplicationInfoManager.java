@@ -16,16 +16,16 @@
 
 package com.netflix.appinfo;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.netflix.appinfo.InstanceInfo.InstanceStatus;
 import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider;
 import com.netflix.discovery.StatusChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The class that initializes information required for registration with
@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 public class ApplicationInfoManager {
+
     private static final Logger logger = LoggerFactory.getLogger(ApplicationInfoManager.class);
 
     private static final InstanceStatusMapper NO_OP_MAPPER = new InstanceStatusMapper() {
@@ -58,6 +59,7 @@ public class ApplicationInfoManager {
     private static ApplicationInfoManager instance = new ApplicationInfoManager(null, null, null);
 
     protected final Map<String, StatusChangeListener> listeners;
+
     private final InstanceStatusMapper instanceStatusMapper;
 
     private InstanceInfo instanceInfo;
@@ -81,7 +83,9 @@ public class ApplicationInfoManager {
      * Either use DI or create this explicitly using one of the other public constructors.
      */
     @Inject
-    public ApplicationInfoManager(EurekaInstanceConfig config, InstanceInfo instanceInfo, OptionalArgs optionalArgs) {
+    public ApplicationInfoManager(EurekaInstanceConfig config,
+                                  InstanceInfo instanceInfo,
+                                  OptionalArgs optionalArgs) {
         this.config = config;
         this.instanceInfo = instanceInfo;
         this.listeners = new ConcurrentHashMap<String, StatusChangeListener>();
