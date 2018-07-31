@@ -1,10 +1,5 @@
 package com.netflix.discovery;
 
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.google.inject.ImplementedBy;
 import com.netflix.appinfo.ApplicationInfoManager;
 import com.netflix.appinfo.HealthCheckCallback;
@@ -12,6 +7,10 @@ import com.netflix.appinfo.HealthCheckHandler;
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.shared.Applications;
 import com.netflix.discovery.shared.LookupService;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Define a simple interface over the current DiscoveryClient implementation.
@@ -67,7 +66,9 @@ public interface EurekaClient extends LookupService {
      *
      * @return - The list of {@link InstanceInfo} objects matching the criteria, empty list if not instances found.
      */
-    public List<InstanceInfo> getInstancesByVipAddress(String vipAddress, boolean secure, @Nullable String region);
+    public List<InstanceInfo> getInstancesByVipAddress(String vipAddress,
+                                                       boolean secure,
+                                                       @Nullable String region);
 
     /**
      * Gets the list of instances matching the given VIP Address and the given
@@ -79,7 +80,9 @@ public interface EurekaClient extends LookupService {
      * @param secure true if it is a secure vip address, false otherwise.
      * @return - The list of {@link InstanceInfo} objects matching the criteria.
      */
-    public List<InstanceInfo> getInstancesByVipAddressAndAppName(String vipAddress, String appName, boolean secure);
+    public List<InstanceInfo> getInstancesByVipAddressAndAppName(String vipAddress,
+                                                                 String appName,
+                                                                 boolean secure);
 
     // ==========================
     // getters for local metadata

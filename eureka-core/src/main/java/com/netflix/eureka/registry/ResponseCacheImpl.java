@@ -16,28 +16,9 @@
 
 package com.netflix.eureka.registry;
 
-import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPOutputStream;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.*;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.netflix.appinfo.EurekaAccept;
@@ -56,6 +37,17 @@ import com.netflix.servo.monitor.Stopwatch;
 import com.netflix.servo.monitor.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * The class that is responsible for caching registry information that will be
@@ -112,9 +104,16 @@ public class ResponseCacheImpl implements ResponseCache {
                 }
             });
 
+    /**
+     * 只读缓存
+     */
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
 
+    /**
+     * 读写缓存
+     */
     private final LoadingCache<Key, Value> readWriteCacheMap;
+
     private final boolean shouldUseReadOnlyResponseCache;
     private final AbstractInstanceRegistry registry;
     private final EurekaServerConfig serverConfig;
@@ -344,17 +343,33 @@ public class ResponseCacheImpl implements ResponseCache {
     Value getValue(final Key key, boolean useReadOnlyCache) {
         Value payload = null;
         try {
+
+            /**
+             *
+             * 精华: 使用两级缓存
+             *  多级缓存机制，用了两个map，来做了两级缓存，只读缓存map，读写缓存map，
+             *  先从只读缓存里去读，如果没有的话，会从读写缓存里去读，
+             *  如果这个读写缓存，没有缓存的话，会从eureka server的注册表中去读取
+
+             */
             if (useReadOnlyCache) {
-                final Value currentPayload = readOnlyCacheMap.get(key);
+
+                Value currentPayload = readOnlyCacheMap.get(key);
+
                 if (currentPayload != null) {
                     payload = currentPayload;
                 } else {
+                    /**
+                     * 如果在读写缓存map中读取到了数据，即同步到只读缓存map中,
+                     * 方便下次读写数据
+                     */
                     payload = readWriteCacheMap.get(key);
                     readOnlyCacheMap.put(key, payload);
                 }
             } else {
                 payload = readWriteCacheMap.get(key);
             }
+
         } catch (Throwable t) {
             logger.error("Cannot get value for key : {}", key, t);
         }

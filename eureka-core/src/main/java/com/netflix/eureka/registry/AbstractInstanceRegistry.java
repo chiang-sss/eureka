@@ -69,6 +69,17 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
     /**
      * 注册表信息
+     * {
+        “ServiceA”: {
+            “001”: Lease<InstanceInfo>,
+            “002”: Lease<InstanceInfo>,
+            “003”: Lease<InstanceInfo>
+        },
+        “ServiceB”: {
+            “001”: Lease<InstanceInfo>
+        }
+     }
+
      */
     private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry
             = new ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>>();
@@ -199,9 +210,12 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             Lease<InstanceInfo> existingLease = gMap.get(registrant.getId());
             // Retain the last dirty timestamp without overwriting it, if there is already a lease
             if (existingLease != null && (existingLease.getHolder() != null)) {
+
                 Long existingLastDirtyTimestamp = existingLease.getHolder().getLastDirtyTimestamp();
                 Long registrationLastDirtyTimestamp = registrant.getLastDirtyTimestamp();
-                logger.debug("Existing lease found (existing={}, provided={}", existingLastDirtyTimestamp, registrationLastDirtyTimestamp);
+
+                logger.debug("Existing lease found (existing={}, provided={}",
+                                            existingLastDirtyTimestamp, registrationLastDirtyTimestamp);
 
                 // this is a > instead of a >= because if the timestamps are equal, we still take the remote transmitted
                 // InstanceInfo instead of the server local copy.
@@ -258,7 +272,11 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             registrant.setActionType(ActionType.ADDED);
             recentlyChangedQueue.add(new RecentlyChangedItem(lease));
             registrant.setLastUpdatedTimestamp();
+
+
             invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());
+
+
             logger.info("Registered instance {}/{} with status {} (replication={})",
                     registrant.getAppName(), registrant.getId(), registrant.getStatus(), isReplication);
         } finally {

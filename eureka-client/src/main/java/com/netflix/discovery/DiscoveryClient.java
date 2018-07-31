@@ -308,6 +308,10 @@ public class DiscoveryClient implements EurekaClient {
         this.backupRegistryProvider = backupRegistryProvider;
 
         this.urlRandomizer = new EndpointUtils.InstanceInfoBasedUrlRandomizer(instanceInfo);
+
+        /**
+         * 获取本地的Applications
+         */
         localRegionApps.set(new Applications());
 
         fetchRegistryGeneration = new AtomicLong(0);
@@ -941,6 +945,11 @@ public class DiscoveryClient implements EurekaClient {
      *
      * @return true if the registry was fetched
      */
+    /**
+     * 抓取Server注册表里面的信息,通过boolean来判断全量还是增量
+     * @param forceFullRegistryFetch
+     * @return
+     */
     private boolean fetchRegistry(boolean forceFullRegistryFetch) {
         Stopwatch tracer = FETCH_REGISTRY_TIMER.start();
 
@@ -954,6 +963,8 @@ public class DiscoveryClient implements EurekaClient {
              * 槽点处:
              * boolean isShouldDisableDelta = clientConfig.shouldDisableDelta();
              * boolean isRegistryVipAddressEmpty = (!Strings.isNullOrEmpty(clientConfig.getRegistryRefreshSingleVipAddress();
+             * boolean isApplicationsEmpty = (applications == null);
+             * boolean isRegisteredApplicationsEmpty = (applications.getRegisteredApplications().size() == 0);
              *  设计需要通俗易懂
              *
              *  (applications.getVersion() == -1)  -1是什么，major number,这里看不懂
@@ -973,10 +984,19 @@ public class DiscoveryClient implements EurekaClient {
                 logger.info("Registered Applications size is zero : {}",
                         (applications.getRegisteredApplications().size() == 0));
                 logger.info("Application version is -1: {}", (applications.getVersion() == -1));
+
+                /**
+                 * 调用jersey client，发送http请求（http://localhost:8080/v2/apps），
+                 * GET请求，调用eureka server的getApplications restful接口，获取全量注册表，缓存在自己的本地
+                 */
                 getAndStoreFullRegistry();
+
             } else {
+
                 getAndUpdateDelta(applications);
+
             }
+
             applications.setAppsHashCode(applications.getReconcileHashCode());
             logTotalInstances();
         } catch (Throwable e) {
@@ -1061,9 +1081,11 @@ public class DiscoveryClient implements EurekaClient {
         EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
                 ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
                 : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());
+
         if (httpResponse.getStatusCode() == Status.OK.getStatusCode()) {
             apps = httpResponse.getEntity();
         }
+
         logger.info("The response status is {}", httpResponse.getStatusCode());
 
         if (apps == null) {

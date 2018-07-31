@@ -143,8 +143,31 @@ public class ApplicationResource {
     @Consumes({"application/json", "application/xml"})
     public Response addInstance(InstanceInfo info,
                                 @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication) {
+        /**
+         *
+         InstanceInfo，服务实例，里面最主要的就是包含2块数据：
+         （1）主机名、ip地址、端口号、url地址
+         （2）lease（租约）的信息：保持心跳的间隔时间，最近心跳的时间，服务注册的时间，服务启动的时间
+         */
         logger.debug("Registering instance {} (replication={})", info.getId(), isReplication);
         // validate that the instanceinfo contains all the necessary required fields
+
+        // TODO:这里是体现健壮性的地方，但是，不应该这么写，抽一个方法出来。
+        /**
+         * 在ApplicationResource.addInstance()方法中，进来就是大量的check相关的代码逻辑，防御式编程，
+         * 保持代码的健壮性。一个写的非常好的代码，一定要能够应对别人胡乱传递的各种参数，所以重要的接口，
+         * 上来就是一个代码逻辑，对请求参数进行大量的校验。
+         但是一般建议，将这种重要接口的请求参数的校验逻辑，都放在单独的私有方法中
+
+         TODO:槽点1 为何不用单独一个方法去处理这些数据
+            Response checkInstanceInfoValidate(InstanceInfo info);
+
+         TODO: 槽点2 400: Major Number这个需要定义一些枚举
+            Response.status(REQUEST.BAD_REQUEST).entity("Missing instanceId").build()
+            /// 无效请求
+            public static final Long BAD_REQUEST = 400;
+
+         */
         if (isBlank(info.getId())) {
             return Response.status(400).entity("Missing instanceId").build();
         } else if (isBlank(info.getHostName())) {
@@ -161,16 +184,28 @@ public class ApplicationResource {
             return Response.status(400).entity("Missing dataCenterInfo Name").build();
         }
 
+
         // handle cases where clients may be registering with bad DataCenterInfo with missing data
         DataCenterInfo dataCenterInfo = info.getDataCenterInfo();
         if (dataCenterInfo instanceof UniqueIdentifier) {
             String dataCenterInfoId = ((UniqueIdentifier) dataCenterInfo).getId();
             if (isBlank(dataCenterInfoId)) {
+
                 boolean experimental = "true".equalsIgnoreCase(serverConfig.getExperimental("registration.validation.dataCenterInfoId"));
                 if (experimental) {
-                    String entity = "DataCenterInfo of type " + dataCenterInfo.getClass() + " must contain a valid id";
+                    String entity = "DataCenterInfo of type "
+                            + dataCenterInfo.getClass()
+                            + " must contain a valid id";
                     return Response.status(400).entity(entity).build();
                 } else if (dataCenterInfo instanceof AmazonInfo) {
+
+                    /**
+                     TODO:槽点 这里有问题，eureka每次都会判断是不是在AWS上运行
+
+                        但是，作为框架，这个应该让用户自己去配置，比如在配置文件中配置
+                        eureka.server.env=default
+                        eureka.server.env=aws
+                     */
                     AmazonInfo amazonInfo = (AmazonInfo) dataCenterInfo;
                     String effectiveId = amazonInfo.get(AmazonInfo.MetaDataKey.instanceId);
                     if (effectiveId == null) {
@@ -182,6 +217,12 @@ public class ApplicationResource {
             }
         }
 
+        /**
+         * TODO: 槽点 都是硬编码,应届生的代码级别吧
+         * "true".equals()
+         * Response.status(204).build()
+         *
+         */
         registry.register(info, "true".equals(isReplication));
         return Response.status(204).build();  // 204 to be backwards compatible
     }
@@ -198,4 +239,5 @@ public class ApplicationResource {
     private boolean isBlank(String str) {
         return str == null || str.isEmpty();
     }
+
 }

@@ -16,31 +16,17 @@
 
 package com.netflix.discovery.shared.transport;
 
-import javax.ws.rs.core.HttpHeaders;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.appinfo.ApplicationInfoManager;
 import com.netflix.appinfo.EurekaInstanceConfig;
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.EurekaClientConfig;
 import com.netflix.discovery.shared.Applications;
-import com.netflix.discovery.shared.resolver.ClosableResolver;
-import com.netflix.discovery.shared.resolver.ClusterResolver;
-import com.netflix.discovery.shared.resolver.DefaultEndpoint;
-import com.netflix.discovery.shared.resolver.EurekaEndpoint;
-import com.netflix.discovery.shared.resolver.StaticClusterResolver;
+import com.netflix.discovery.shared.resolver.*;
 import com.netflix.discovery.shared.resolver.aws.ApplicationsResolver;
 import com.netflix.discovery.shared.resolver.aws.AwsEndpoint;
 import com.netflix.discovery.shared.resolver.aws.EurekaHttpResolver;
 import com.netflix.discovery.shared.resolver.aws.TestEurekaHttpResolver;
 import com.netflix.discovery.shared.transport.jersey.Jersey1TransportClientFactories;
-import com.netflix.discovery.shared.transport.jersey.TransportClientFactories;
 import com.netflix.discovery.util.EurekaEntityComparators;
 import com.netflix.discovery.util.InstanceInfoGenerator;
 import com.sun.jersey.api.client.ClientHandlerException;
@@ -51,6 +37,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.core.HttpHeaders;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static com.netflix.discovery.shared.transport.EurekaHttpResponse.anEurekaHttpResponse;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -59,12 +54,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Tomasz Bak

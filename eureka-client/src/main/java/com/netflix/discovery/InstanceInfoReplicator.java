@@ -114,6 +114,11 @@ class InstanceInfoReplicator implements Runnable {
 
     public void run() {
         try {
+            /**
+             * refreshInstanceInfo:
+             * 里面其实是调用ApplicationInfoManager的一些方法刷新了一下服务实例的配置，
+             * 看看配置有没有改变，如果改变了，就刷新一下；
+             */
             discoveryClient.refreshInstanceInfo();
 
             Long dirtyTimestamp = instanceInfo.isDirtyWithTime();

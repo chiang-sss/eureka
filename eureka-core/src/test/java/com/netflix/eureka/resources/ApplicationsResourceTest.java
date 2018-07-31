@@ -30,7 +30,8 @@ public class ApplicationsResourceTest extends AbstractTester {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        InstanceInfoGenerator instanceInfos = InstanceInfoGenerator.newBuilder(20, 6).build();
+        InstanceInfoGenerator instanceInfos = InstanceInfoGenerator
+                                                    .newBuilder(20, 6).build();
         testApplications = instanceInfos.toApplications();
 
         applicationsResource = new ApplicationsResource(serverContext);
